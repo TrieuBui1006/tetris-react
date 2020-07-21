@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState, Fragment } from 'react'
 
-import { createStage, checkCollision } from '../gameHelpers'
+import { createStage, checkCollision, createPredict } from '../gameHelpers'
 
 // Styled Components
 import { StyledTetrisWrapper, StyledTetris } from './styles/StyledTetris'
@@ -10,23 +10,31 @@ import { useInterval } from '../hooks/useInterval'
 import { usePlayer } from '../hooks/usePlayer'
 import { useStage } from '../hooks/useStage'
 import { useGameStatus } from '../hooks/useGameStatus'
+import { usePredict } from '../hooks/usePredict'
 
 // Components
 import Stage from './Stage'
 import Display from './Display'
 import StartButton from './StartButton'
+import Predict from './Predict'
 
 const Tetris = () => {
   const [dropTime, setDropTime] = useState(null)
   const [gameOver, setGameOver] = useState(false)
 
-  const [player, updatePlayerPos, resetPlayer, playerRotate] = usePlayer()
+  const [
+    player,
+    playerPredict,
+    updatePlayerPos,
+    resetPlayer,
+    playerRotate,
+    initPlayer,
+  ] = usePlayer()
   const [stage, setStage, rowsCleared] = useStage(player, resetPlayer)
+  const [predict, setPredict] = usePredict(playerPredict) //---
   const [score, setScore, rows, setRows, level, setLevel] = useGameStatus(
     rowsCleared
   )
-
-  console.log('re-render')
 
   const movePlayer = (dir) => {
     if (!checkCollision(player, stage, { x: dir, y: 0 })) {
@@ -35,11 +43,12 @@ const Tetris = () => {
   }
 
   const startGame = () => {
-    console.log('test')
     // Reset everything
     setStage(createStage())
-    setDropTime(1000)
-    resetPlayer()
+    setPredict(createPredict())
+    setDropTime(400)
+    initPlayer()
+    // resetPlayer()
     setGameOver(false)
     setScore(0)
     setRows(0)
@@ -51,7 +60,7 @@ const Tetris = () => {
     if (rows > (level + 1) * 10) {
       setLevel((prev) => prev + 1)
       // Also increase speed
-      setDropTime(1000 / (level + 1) + 200)
+      setDropTime(400 / (level + 1) + 50)
     }
 
     if (!checkCollision(player, stage, { x: 0, y: 1 })) {
@@ -70,14 +79,12 @@ const Tetris = () => {
   const keyUp = ({ keyCode }) => {
     if (!gameOver) {
       if (keyCode === 40) {
-        console.log('Interval On')
-        setDropTime(1000 / (level + 1) + 200)
+        setDropTime(400 / (level + 1) + 50)
       }
     }
   }
 
   const dropPlayer = () => {
-    console.log('Interval Off')
     setDropTime(null)
     drop()
   }
@@ -113,11 +120,14 @@ const Tetris = () => {
           {gameOver ? (
             <Display gameOver={gameOver} text="Game Over" />
           ) : (
-            <div>
-              <Display text={`Score: ${score}`} />
-              <Display text={`Rows: ${rows}`} />
-              <Display text={`level: ${level}`} />
-            </div>
+            <Fragment>
+              <Predict predict={predict} />
+              <div>
+                <Display text={`Score: ${score}`} />
+                <Display text={`Rows: ${rows}`} />
+                <Display text={`level: ${level}`} />
+              </div>
+            </Fragment>
           )}
           <StartButton callback={startGame} />
         </aside>

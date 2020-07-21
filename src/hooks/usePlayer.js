@@ -1,13 +1,18 @@
 import { useState, useCallback } from 'react'
 
 import { TETROMINOS, randomTetromino } from '../tetrominos'
-import { STAGE_WIDTH, checkCollision } from '../gameHelpers'
+import { STAGE_WIDTH, PREDICT_EDGE, checkCollision } from '../gameHelpers'
 
 export const usePlayer = () => {
   const [player, setPlayer] = useState({
     pos: { x: 0, y: 0 },
     tetromino: TETROMINOS[0].shape,
     collided: false,
+  })
+
+  const [playerPredict, setPlayerPredict] = useState({
+    pos: { x: 0, y: 0 },
+    tetromino: TETROMINOS[0].shape,
   })
 
   const rotate = (matrix, dir) => {
@@ -47,13 +52,46 @@ export const usePlayer = () => {
     }))
   }
 
-  const resetPlayer = useCallback(() => {
+  //Adding Predict
+  const initPlayer = useCallback(() => {
     setPlayer({
       pos: { x: STAGE_WIDTH / 2 - 2, y: 0 },
       tetromino: randomTetromino().shape,
       collided: false,
     })
+    setPlayerPredict(() => ({
+      pos: { x: PREDICT_EDGE / 2 - 2, y: 1 },
+      tetromino: randomTetromino().shape,
+    }))
   }, [])
 
-  return [player, updatePlayerPos, resetPlayer, playerRotate]
+  const resetPlayer = useCallback(() => {
+    setPlayer({
+      pos: { x: STAGE_WIDTH / 2 - 2, y: 0 },
+      tetromino: playerPredict.tetromino,
+      collided: false,
+    })
+
+    setPlayerPredict(() => ({
+      pos: { x: PREDICT_EDGE / 2 - 2, y: 1 },
+      tetromino: randomTetromino().shape,
+    }))
+  }, [playerPredict.tetromino])
+
+  // const resetPlayer = useCallback(() => {
+  //   setPlayer({
+  //     pos: { x: STAGE_WIDTH / 2 - 2, y: 0 },
+  //     tetromino: randomTetromino().shape,
+  //     collided: false,
+  //   })
+  // }, [])
+
+  return [
+    player,
+    playerPredict,
+    updatePlayerPos,
+    resetPlayer,
+    playerRotate,
+    initPlayer,
+  ]
 }
